@@ -1,0 +1,32 @@
+TARGET=c128
+AS=ca65
+CC=cl65
+
+VPATH=../cbm ../src
+INCLUDE=../src
+SYS_INCLUDE=../cbm
+
+CFLAGS=-I. -I$(INCLUDE) -I$(SYS_INCLUDE) -O -t $(TARGET)
+
+OBJECTS=ext_lib.o lpeekpoke.o mtest_asm.o
+
+all:    gmt128 gmt128.bin gram512-128.bin gram1-128.bin gram4-128.bin
+
+
+gmt128: gmt.o $(OBJECTS)
+	ld65 $< $(OBJECTS) -t $(TARGET) --lib $(TARGET).lib -o $@
+
+gmt128.o: gmt.c
+	cl65 $(CFLAGS) -DCART -c -o $@ $<
+
+gram512-128.o: gmt.c
+	cl65 $(CFLAGS) -DCART -DDIAG=5 -c -o $@ $<
+
+gram1-128.o: gmt.c
+	cl65 $(CFLAGS) -DCART -DDIAG=1 -c -o $@ $<
+
+gram4-128.o: gmt.c
+	cl65 $(CFLAGS) -DCART -DDIAG=4 -c -o $@ $<
+
+%.bin: %.o bin128_16k.o $(OBJECTS)
+	ld65 bin128_16k.o $< $(OBJECTS) -C $(SYS_INCLUDE)/bin128_16k.cfg --lib $(TARGET).lib -o $@

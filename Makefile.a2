@@ -1,0 +1,43 @@
+TARGET=apple2enh
+AS=ca65
+CC=cl65
+
+VPATH=../apple2 ../src
+INCLUDE=../src
+SYS_INCLUDE=../apple2
+
+CFLAGS=-I$(INCLUDE) -I$(SYS_INCLUDE) -O -t $(TARGET)
+
+OBJECTS=ext_lib.o lpeekpoke.o mtest_asm.o
+
+
+all:    gmt140.po gmt.2mg ramgs4.2mg ramgs8.2mg
+
+gmt140.po: gmt.system
+	cp ../img/prodos140.po gmt140.po
+	cat $< | java -jar ~/bin/AppleCommander-1.3.5.jar -p gmt140.po $< sys 0x2000
+	#java -jar ~/bin/AppleCommander-1.3.5.jar -l gmt140.po
+
+ramgs4.o:  gmt.c
+	cl65 $(CFLAGS) -DDIAG=4 -c -o $@ $<
+
+ramgs8.o:  gmt.c
+	cl65 $(CFLAGS) -DDIAG=8 -c -o $@ $<
+
+%.2mg: %.system
+	cp ../img/prodos800.2mg $@
+	cat $< | java -jar ~/bin/AppleCommander-1.3.5.jar -p $@ $< sys 0x2000
+	#java -jar ~/bin/AppleCommander-1.3.5.jar -l $@
+
+%.system: %.o $(OBJECTS)
+	ld65 -o $@ $< $(OBJECTS) -D __EXEHDR__=0 -C $(TARGET)-system.cfg --lib $(TARGET).lib
+
+.PRECIOUS: %.o %.system
+
+test.sys: test.o lpeekpoke.o
+	ld65 -o test.sys test.o lpeekpoke.o -t $(TARGET) --lib $(TARGET).lib
+
+test800.2mg: test.sys
+	cp ../img/prodos800.2mg test800.2mg
+	cat test.sys | java -jar ~/bin/AppleCommander-1.3.5.jar -p test800.2mg test.system sys 0x2000
+

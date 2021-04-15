@@ -1,4 +1,4 @@
-# gmt
+# GMT
 GGLABS Memory Test for vintage computers
 GMT is a memory test for vintage computers optimized for speed and coverage. The code is based on the test algorithms described in
 "Testing Semiconductor Memories: Theory and Practice" by A.J. van de Goor. 

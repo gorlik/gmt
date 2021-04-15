@@ -11,7 +11,7 @@
 	.import	       	__INTERRUPTOR_COUNT__
 	.import		__RAM_START__, __RAM_SIZE__	; Linker generated
 
-	.import		_cgetc, _puts, _memcpy
+	.import		_memcpy
 
 	.import		__DATA_LOAD__, __DATA_RUN__, __DATA_SIZE__
 
@@ -82,25 +82,6 @@ startup:
 	lda	#$D0;>(__RAM_START__ + __RAM_SIZE__)
        	sta	sp+1   		; Set argument stack ptr
 
-; If we have IRQ functions, chain our stub into the IRQ vector
-
-;        lda     #<__INTERRUPTOR_COUNT__
-;      	beq	NoIRQ1
-;      	lda	IRQVec
-;       	ldx	IRQVec+1
-;      	sta	IRQInd+1
-;      	stx	IRQInd+2
-;      	lda	#<IRQStub
-;      	ldx	#>IRQStub
-;      	sei
-;      	sta	IRQVec
-;      	stx	IRQVec+1
-;      	cli
-
-; Call module constructors
-
-	
-NoIRQ1:
 	lda	#<__DATA_RUN__
 	ldx	#>__DATA_RUN__
 	jsr	pushax
@@ -114,40 +95,11 @@ NoIRQ1:
 
 	jsr	initlib
 
-; Push arguments and call main
-;ra:
-;	inc	$D021
-;	jmp	ra
-
-
+; call main
         jsr     callmain
 
 ; Back from main (This is also the _exit entry). Run module destructors
 
 _exit:  jsr	donelib
 
-
-; Reset the IRQ vector if we chained it.
-
-;        ;pha  			; Save the return code on stack
-;	lda     #<__INTERRUPTOR_COUNT__
-;	beq	NoIRQ2
-;	lda	IRQInd+1
-;	ldx	IRQInd+2
-;	sei
-;	sta	IRQVec
-;	stx	IRQVec+1
-;	cli
-
-
-NoIRQ2:	
-	lda	#<exitmsg
-	ldx	#>exitmsg
-	jsr	_puts
-	jsr	_cgetc
 	jmp	64738		;Kernal reset address as best I know it.
-
-.rodata
-exitmsg:
-	.byt	"Your program has ended.  Press any key",13,"to continue...",0
-

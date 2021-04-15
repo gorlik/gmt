@@ -1,6 +1,4 @@
-;
 ; Startup code for cc65 (C128 version)
-;
 
         .export         _exit
         .export         __STARTUP__ : absolute = 1      ; Mark as startup
@@ -10,15 +8,12 @@
         .import         BSOUT
         .import         __INTERRUPTOR_COUNT__
         .import         __RAM_START__, __RAM_SIZE__	; Linker generated
-
-	.import		_cgetc, _puts, _memcpy
-
+	.import		_memcpy
 	.import		__DATA_LOAD__, __DATA_RUN__, __DATA_SIZE__
-
+	
         .include        "zeropage.inc"
-        .include        "c128.inc"
-
-
+	.include        "c128.inc"
+	
 ; ------------------------------------------------------------------------
 ; Startup code
 
@@ -30,26 +25,26 @@
 
 Start:
 
-          sei
-          ldx #$ff
-          txs
-          cld
-          lda #$e3
-          sta $01
-          lda #$37
-          sta $00
+        sei
+        ldx #$ff
+        txs
+        cld
+        lda #$e3
+        sta $01
+        lda #$37
+        sta $00
 
-          lda #%00001010     ; Bank in Kernal ROM
-                             ; BIT 0   : $D000-$DFFF (0 = I/O Block)
-                             ; BIT 1   : $4000-$7FFF (1 = RAM)
-                             ; BIT 2/3 : $8000-$BFFF (10 = External ROM)
-                             ; BIT 4/5 : $C000-$CFFF/$E000-$FFFF (00 = Kernal ROM)
-                             ; BIT 6/7 : RAM used. (00 = RAM 0)
-          sta $ff00          ; MMU Configuration Register
+        lda #%00001010     ; Bank in Kernal ROM
+		           ; BIT 0   : $D000-$DFFF (0 = I/O Block)
+                           ; BIT 1   : $4000-$7FFF (1 = RAM)
+                           ; BIT 2/3 : $8000-$BFFF (10 = External ROM)
+                           ; BIT 4/5 : $C000-$CFFF/$E000-$FFFF (00 = Kernal ROM)
+                           ; BIT 6/7 : RAM used. (00 = RAM 0)
+        sta $ff00          ; MMU Configuration Register
 
-          jsr $ff8a          ; Restore Vectors
-          jsr $ff84          ; Init I/O Devices, Ports & Timers
-          jsr $ff81          ; Init Editor & Video Chips
+        jsr $ff8a          ; Restore Vectors
+        jsr $ff84          ; Init I/O Devices, Ports & Timers
+        jsr $ff81          ; Init Editor & Video Chips
 
 
 ; Switch to second charset
@@ -67,21 +62,6 @@ Start:
 	lda	#>(__RAM_START__ + __RAM_SIZE__)
        	sta	sp+1   		; Set argument stack ptr
 
-; If we have IRQ functions, chain our stub into the IRQ vector
-
-;       lda     #<__INTERRUPTOR_COUNT__
-;      	beq	NoIRQ1
-;      	lda	IRQVec
-;       	ldx	IRQVec+1
-;      	sta	IRQInd+1
-;      	stx	IRQInd+2
-;      	lda	#<IRQStub
-;      	ldx	#>IRQStub
-;      	sei
-;      	sta	IRQVec
-;      	stx	IRQVec+1
-;      	cli
-
 NoIRQ1:
 	lda	#<__DATA_RUN__
 	ldx	#>__DATA_RUN__
@@ -97,11 +77,7 @@ NoIRQ1:
 
         jsr     initlib
 
-
-; Push the command-line arguments; and, call main().
-;ra:
-;	inc	$D021
-;	jmp	ra
+; Call main().
 
         jsr     callmain
 
@@ -109,29 +85,4 @@ NoIRQ1:
 
 _exit:  jsr	donelib
 
-
-; Reset the IRQ vector if we chained it.
-
-;        ;pha  			; Save the return code on stack
-;	lda     #<__INTERRUPTOR_COUNT__
-;	beq	NoIRQ2
-;	lda	IRQInd+1
-;	ldx	IRQInd+2
-;	sei
-;	sta	IRQVec
-;	stx	IRQVec+1
-;	cli
-
-
-NoIRQ2:
-;	lda	#<exitmsg
-;	ldx	#>exitmsg
-;	jsr	_puts
-;	jsr	_cgetc
-;	jmp	64738		;Kernal reset address as best I know it.
 loop:   jmp loop
-
-;.rodata
-;exitmsg:
-;	.byt	"Your program has ended.  Press any key",13,"to continue...",0
-

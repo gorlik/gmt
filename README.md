@@ -9,5 +9,3 @@ On Commodore computers the REU is not supported as the way REU is accessed is no
 Support for on board memory on both commodore and apple is possible but not currently implemented.
 
 ![alt text](screenshots/gmt-0.41_2gs.png "GMT running on Apple IIgs")
-![alt text](screenshots/gmt-0.41_c64.png "GMT running on Commodore 64")
-![alt text](screenshots/gmt-0.41_c128.png "GMT running on Commodore 128")

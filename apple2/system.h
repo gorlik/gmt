@@ -21,8 +21,15 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#ifdef __SDCC
+#define __fastcall__
+#else
+#define __reentrant
+#endif
+
 // test & memory definitions
 typedef unsigned int tword_t;
+#define TWORD_SIZE 2
 #define BANK_SHIFT 6
 #define MAX_BANK   0x7f
 

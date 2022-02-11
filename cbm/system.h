@@ -21,16 +21,23 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
+#ifdef __SDCC
+#define __fastcall__
+#else
+#define __reentrant
+#endif
+
 // test & memory definitions
 typedef unsigned char tword_t;
+#define TWORD_SIZE 1
 #define BANK_SHIFT 4
 #define MAX_BANK   0xff
 
 // screen constants
 #define INV_ON          "\x12"
 #define INV_OFF         "\x92"
-#define MTEXT_ON        
-#define MTEXT_OFF       
+#define MTEXT_ON
+#define MTEXT_OFF
 
 // colors
 #define COL_BLACK     0x00

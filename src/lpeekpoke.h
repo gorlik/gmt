@@ -21,6 +21,10 @@
 #ifndef LPEEKPOKE_H
 #define LPEEKPOKE_H
 
+#ifdef __SDCC
+#define __fastcall__
+#endif
+
 void __fastcall__ LPOKE(unsigned char bank, unsigned int addr, unsigned char val);
 //void LPOKEW(unsigned char bank, unsigned int addr, unsigned int val);
 

@@ -1,4 +1,5 @@
-all: a2 c64 c128
+all: a2 c64 c128 
+#sdcc-c64
 
 a2:
 	mkdir -p build-a2
@@ -12,8 +13,12 @@ c128:
 	mkdir -p build-c128
 	cd build-c128; make -f ../Makefile.c128
 
+sdcc-c64:
+	mkdir -p build-sdcc64
+	cd build-sdcc64; make -f ../Makefile.sdcc64
+
 clean:
-	rm -rf build-a2 build-c64 build-c128 gmt_bin.tar.gz
+	rm -rf build-a2 build-c64 build-c128 build-sdcc64 gmt_bin.tar.gz
 
 bin: all
 	tar cvfz gmt_bin.tar.gz build-a2/*.2mg build-a2/*.po build-a2/gmt.system \

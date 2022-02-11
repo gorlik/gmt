@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*  GMT - GGLABS MEMORY TEST                                                  */
 /*  A modern retro computer memory test optimized for coverage and speed      */
-/*  Copyright 2017-2020 Gabriele Gorla                                        */
+/*  Copyright 2017-2022 Gabriele Gorla                                        */
 /*                                                                            */
 /*  This program is free software: you can redistribute it and/or modify      */
 /*  it under the terms of the GNU General Public License as published by      */
@@ -36,7 +36,7 @@
 #define SCR_WIDTH       40
 #endif
 
-#define VER "0.46"
+#define VER "0.47"
 #define LOG_LINES 10
 #define LOG_LEN   (80)
 #define STATUS_X  (SCR_WIDTH/2+2)
@@ -55,6 +55,7 @@
 
 // define TEST to enable error injection for emulator testing
 //#define TEST
+#define ERR_BANK 0x12
 #define ERR_ADDR 0x1040
 
 // This structure is shared with the assebmly code. Any modification will
@@ -69,12 +70,12 @@ struct error {
   tword_t      pad1;
   // struct error is 8 bytes for 8-bit tword
   // and 16 bytes for 16-bit tword
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
   tword_t        pad2;
 #endif
 };
 
-typedef void (*test_ptr)(unsigned char, const tword_t *, unsigned char);
+typedef void (*test_ptr)(unsigned char, const tword_t *, unsigned char) __reentrant;
 
 struct test_t {
   const char *name;
@@ -88,14 +89,14 @@ struct test_t {
 /*****************************************************************************/
 
 // actual tests
-void MATS(unsigned char bank, const tword_t *pat, unsigned char len);
-void SSO (unsigned char bank, const tword_t *pat, unsigned char len);
-void AAD (unsigned char bank, const tword_t *pat, unsigned char len);
+void MATS(unsigned char bank, const tword_t *pat, unsigned char len) __reentrant;
+void SSO (unsigned char bank, const tword_t *pat, unsigned char len) __reentrant;
+void AAD (unsigned char bank, const tword_t *pat, unsigned char len) __reentrant;
 
 // test helpers
 void Set_Pat(tword_t pat);
 void Test_Complete(unsigned char bb);
-int Start_Test(unsigned int mstart, unsigned int mend, unsigned char t);
+int  Start_Test(unsigned int mstart, unsigned int mend, unsigned char t);
 
 // utility functions
 static unsigned int Mem_Detect(unsigned char mstart);
@@ -133,7 +134,7 @@ unsigned int NErr; // total number of errors
 
 static const tword_t mats4_pat[]  = { 0x0000, 0x5555, 0x3333 };
 static const tword_t mats8_pat[]  = { 0x0000, 0x5555, 0x0f0f, 0x3333 };
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
 static const tword_t mats16_pat[] = { 0x0000, 0x5555, 0x00ff, 0x0f0f, 0x3333 };
 static const tword_t sso_pat[]    = { 0x01fe, 0x02fd, 0x04fb, 0x08f7,
 				      0x10ef, 0x20df, 0x40bf, 0x807f };
@@ -143,7 +144,7 @@ static const struct test_t test[] = {
   //  { "ALL  ", NULL,  NULL, 0 },
   { "MATS4 ", MATS, mats4_pat,  sizeof(mats4_pat)/sizeof(tword_t) },
   { "MATS8 ", MATS, mats8_pat,  sizeof(mats8_pat)/sizeof(tword_t) },
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
   { "MATS16", MATS, mats16_pat, sizeof(mats16_pat)/sizeof(tword_t) },
   { "SSO   ", SSO,  sso_pat,    sizeof(sso_pat)/sizeof(tword_t) },
 #endif
@@ -230,7 +231,8 @@ int main (void)
   
  quit:
   clrscr();
-  return EXIT_SUCCESS;
+  //  return EXIT_SUCCESS;
+  return 0;
 }
 
 #ifdef DIAG
@@ -394,14 +396,14 @@ void Set_Pat(tword_t pat)
 {
   DPat=pat;
   gotoxy (STATUS_X+11,STATUS_Y);
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
   printf("%04X",pat);
 #else
   printf(" %02X ",pat);
 #endif
 }
 
-void SSO(unsigned char bank, const tword_t *pat, unsigned char len)
+void SSO(unsigned char bank, const tword_t *pat, unsigned char len) __reentrant
 {
   unsigned char i;
   
@@ -410,13 +412,13 @@ void SSO(unsigned char bank, const tword_t *pat, unsigned char len)
     Set_Pat(pat[i]);
     Bank_Write();
 #ifdef TEST
-    LPOKE(bank,ERR_ADDR,0x5a);
+    if (bank==ERR_BANK) LPOKE(bank,ERR_ADDR,0x5a);
 #endif
     Bank_Read();
   }
 }
 
-void MATS(unsigned char bank, const tword_t *pat, unsigned char len)
+void MATS(unsigned char bank, const tword_t *pat, unsigned char len) __reentrant
 {
   unsigned char i;
   
@@ -432,23 +434,28 @@ void MATS(unsigned char bank, const tword_t *pat, unsigned char len)
     Bank_Write();
     Bank_Read();
 #ifdef TEST
-    if(i==1) {
-      LPOKE(bank,ERR_ADDR,0x54);
-      LPOKE(bank,ERR_ADDR+1,0x15);
+    if(bank==ERR_BANK && i==1) {
+      LPOKE(ERR_BANK,ERR_ADDR,0x54);
+      LPOKE(ERR_BANK,ERR_ADDR+1,0x15);
     }
 #endif
     Bank_Read();
   }  
 }
 
-void AAD(unsigned char bank, const tword_t *pat, unsigned char len)
+void AAD(unsigned char bank, const tword_t *pat, unsigned char len) __reentrant
 {
   (void)pat;
   (void)len;
   
   Bank_Set(bank);
   AAD_Write();
-  //  if(bank==2) LPOKE(bank,ERR_ADDR,0x54);
+#ifdef TEST
+  if(bank==ERR_BANK) LPOKE(bank,ERR_ADDR,0x54);
+  //if(bank==ERR_BANK) LPOKE(bank,ERR_ADDR+0x30,0x9a);
+  //    if(bank==ERR_BANK) LPOKE(bank,ERR_ADDR+0x60,0xf1);
+  //  if(bank==ERR_BANK+1) LPOKE(bank,ERR_ADDR,0xAF);
+#endif
   AAD_Read();
 }
 
@@ -558,7 +565,7 @@ void PrintErrorLog(unsigned int err, unsigned char bank)
     fbit=(err_list[i].expected^err_list[i].read1)|(err_list[i].expected^err_list[i].read2)|
          (err_list[i].expected^err_list[i].read3)|(err_list[i].expected^err_list[i].read4);
 
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
     //    fbit= (fbit&0xFF)|((fbit>>8)&0xFF);
     // the above does not work (seems a cc65 issue)
     fb= ((fbit>>8)&0xFF)|(fbit&0xFF);
@@ -568,7 +575,7 @@ void PrintErrorLog(unsigned int err, unsigned char bank)
     
 #if SCR_WIDTH==40
     sprintf(log(),
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
 	    "%02X/%04X %04X %04X %04X %04X %04X %02X",
 #else
 	    "%02X/%04X %02X %02X %02X %02X %02X %02X",
@@ -578,7 +585,7 @@ void PrintErrorLog(unsigned int err, unsigned char bank)
 #else
     
     sprintf(log(),
-#if sizeof(tword_t)==2
+#if TWORD_SIZE==2
 	    "bank:%02X adr:%04X exp:%04X read1:%04X read2:%04X read3:%04X read4:%04X F:%02X",
 #else
 	    "bank:%02X adr:%04X exp:%02X read1:%02X read2:%02X read3:%02X read4:%02X F:%02X",
@@ -620,7 +627,7 @@ void Main_Menu(void)
 #if SCR_WIDTH==40
   sprintf(log(),"GMT V%s - GGLABS Memory Test",VER);
   sprintf(log(),"A modern " MEM_TYPE " memory test   ");
-  sprintf(log(),"Copyright (c) 2017-2020");
+  sprintf(log(),"Copyright (c) 2017-2022");
   sprintf(log(),"Gabriele Gorla" EXTRA_AUTHORS);
   sprintf(log(),"");  
   sprintf(log(),"This program is free software: you");
@@ -632,7 +639,7 @@ void Main_Menu(void)
   sprintf(log(),"GGLABS Memory Test V%s - http://gglabs.us",VER);
   sprintf(log(),"A modern " MEM_TYPE " memory test optimized for coverage and speed");
   sprintf(log(),"Partially based on test algorithms by A.J. van de Goor");
-  sprintf(log(),"Copyright (c) 2017-2020 Gabriele Gorla" EXTRA_AUTHORS);
+  sprintf(log(),"Copyright (c) 2017-2022 Gabriele Gorla" EXTRA_AUTHORS);
   sprintf(log(),"");  
   sprintf(log(),"This program is free software: you can redistribute it and/or modify");
   sprintf(log(),"it under the terms of the GNU General Public License as published by");

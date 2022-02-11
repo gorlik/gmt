@@ -1,7 +1,7 @@
 ;******************************************************************************
 ;*  GMT - GGLABS MEMORY TEST                                                  *
 ;*  A modern retro computer memory test optimized for coverage and speed      *
-;*  Copyright 2017, 2018 Gabriele Gorla and Jason Andersen                    *
+;*  Copyright 2017, 2018, 2022 Gabriele Gorla and Jason Andersen              *
 ;*                                                                            *
 ;*  This program is free software: you can redistribute it and/or modify      *
 ;*  it under the terms of the GNU General Public License as published by      *
@@ -17,7 +17,7 @@
 ;*  along with GMT.  If not, see <http://www.gnu.org/licenses/>.              *
 ;*                                                                            *
 ;******************************************************************************
-	
+
 .setcpu		"6502"
 .autoimport 	on
 .importzp	sp
@@ -39,16 +39,12 @@ bankbank:
 .byte $00,$00
 
 .segment	"CODE"
-	
+
 ; ****************** Bank Set *********************
 .proc _Bank_Set: near
-;	jsr pusha
-;	ldy #$00
-;	lda (sp),y		; load bank in A
 	sta bankbank
 	sta bankbank+1          ; reference data bank
         ldx #$00                ; complete the return value
-;	jsr incsp1		; restore stak pointer
 	rts
 .endproc
 
@@ -59,7 +55,7 @@ _Bank_Write:
 	sta $DFFF
 	ldx #$00
 	ldy _DPat
-@loop: 
+@loop:
 	stx $DFFE
 .repeat 256,idx
 	sty $DE00+idx	; store with $1 bytes stride
@@ -81,7 +77,7 @@ _Bank_Read:
 	ldx #$00          	; high address in x
 	ldy _DPat               ; data pattern in y
 @fastloop:
-	stx $DFFE	
+	stx $DFFE
 .repeat 256,idx
         tya
         eor $DE00+idx
@@ -99,16 +95,16 @@ _Bank_Read:
 @slowloop:
         lda $DE00,y
         cmp _DPat
-	bne @error
-@resume:
+	bne @br_error
+@br_resume:
 	iny
 	bne @slowloop
 	inx
 	txa
 	cmp #$40
-	stx $DFFE		
+	stx $DFFE
 	bne @slowloop
-@done: 
+@done:
 	rts
 
 @breakerror:
@@ -116,44 +112,9 @@ _Bank_Read:
 
 ; fall through into error reader, and slow loop for the rest of the bank
 
-@error:
-	pha	   ; push bad value on stack
-	txa	   ;
-	pha	   ; push high address
-
-	lda _NErr		; load current number of errors
-	and #$000f		; limit to the size fo the array
-	asl a			; multiply by 8 (size of one entry)
-	asl a
-	asl a
-	tax			; put the entry offset into x
-	tya
-	sta _err_list,x	        ; store error address into error entry
-	pla			; pull error address high
-	sta _err_list+1,x	; store error address into error entry
-	
-	lda _DPat	        ; load expected pattern
-	sta _err_list+2,x	; put expected pattern into error entry
-	pla			; pull bad read back to A
-	sta _err_list+3,x	; store bad read into error entry
-
-
-	lda $DE00,y
-	sta _err_list+4,x	; store re-read into error entry
-	lda $DE00,y
-	sta _err_list+5,x
-	lda $DE00,y
-	sta _err_list+6,x
-
-	clc
-        lda _NErr
-	adc #$01		        ; increment error number
-        sta _NErr
-        lda _NErr+1
-	adc #$00
-	sta _NErr+1
-	clc
-	bcc @resume		; back to read test
+@br_error:
+	jsr log_error
+	jmp @br_resume
 
 ; ****************** Addr as Data Write *********************
 _AAD_Write:
@@ -161,7 +122,7 @@ _AAD_Write:
 	sta $DFFF
 	ldx #$00
 	ldy #$11
-@loop: 
+@loop:
 	stx $DFFE
 .repeat 256,idx
 	sty $DE00+idx	; store with $1 bytes stride
@@ -175,43 +136,45 @@ _AAD_Write:
 @done:
 	rts
 
-	
+
 ; ****************** Addr as Data Read *********************
 _AAD_Read:
 	lda bankbank
 	sta $DFFF
 	ldx #$00          	; window address
 	ldy #$00                ; low 8-bit addr
-	
-@loopb:	
+
+@loopb:
 	stx $DFFE
 @loop:
 	tya
         clc
 	adc #$11
 	eor $DE00,y
-	bne @error
-@resume:
+	bne @aad_error
+@aad_resume:
 	iny
 	bne @loop
 	inx
-	txa
-	cmp #$40
+	cpx #$40
 	bne @loopb
 	rts
 
-@error:
+@aad_error:
 	sta _DPat
 	tya
 	adc #$11
 	eor _DPat
-	
+	jsr log_error
+        jmp @aad_resume
+
+log_error:
 	pha	   ; push bad value on stack
 	txa	   ;
 	pha	   ; push high address
 
 	lda _NErr		; load current number of errors
-	and #$000f		; limit to the size fo the array
+	and #$0f		; limit to the size fo the array
 	asl a			; multiply by 8 (size of one entry)
 	asl a
 	asl a
@@ -220,12 +183,11 @@ _AAD_Read:
 	sta _err_list,x	        ; store error address into error entry
 	pla			; pull error address high
 	sta _err_list+1,x	; store error address into error entry
-	
+
 	lda _DPat	        ; load expected pattern
 	sta _err_list+2,x	; put expected pattern into error entry
 	pla			; pull bad read back to A
 	sta _err_list+3,x	; store bad read into error entry
-
 
 	lda $DE00,y
 	sta _err_list+4,x	; store re-read into error entry
@@ -234,12 +196,10 @@ _AAD_Read:
 	lda $DE00,y
 	sta _err_list+6,x
 
-	clc
-        lda _NErr
-	adc #$01		        ; increment error number
-        sta _NErr
-        lda _NErr+1
-	adc #$00
-	sta _NErr+1
-	clc
-	bcc @resume		; back to read test
+	inc _NErr
+	bne @skip_inc
+	inc _NErr+1
+@skip_inc:
+	lda _err_list+1,x	; put address back in x
+	tax
+	rts

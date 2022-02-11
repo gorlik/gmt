@@ -1,0 +1,69 @@
+SDCCDIR = /mnt/share/local/sdcc420/bin
+SDCC = $(SDCCDIR)/sdcc
+SDAS = $(SDCCDIR)/sdas6500
+MAKEBIN = $(SDCCDIR)/makebin
+
+SDKDIR = ../../cbm-games/cbm-sdk
+
+SDCCTARGET = -mmos6502
+SDCCOPT = --max-allocs-per-node 25000 --opt-code-speed
+SDCCDEBUG = --fverbose-asm --i-code-in-asm
+SDKINC = -I $(SDKDIR)/include
+
+#SDCCFLAGS = $(SDCCOPT) $(SDKINC)
+SDCCLINKFLAGS = -L $(SDKDIR)/lib --out-fmt-ihx -mmos6502 --no-std-crt0 --code-loc 0x8000 --xram-loc 0x1000
+CRT = $(SDKDIR)/lib/c64_cart_crt0.rel
+LIBS = c64.lib
+
+VPATH = ../cbm ../src
+INCLUDE = ../src
+SYS_INCLUDE = ../cbm
+
+CFLAGS=-I. -I$(INCLUDE) -I$(SYS_INCLUDE) $(SDCCTARGET) $(SDCCOPT) $(SDKINC)
+
+OBJECTS=ext_lib.rel lpeekpoke.rel mtest_asm.rel
+
+
+# gmt64.prg
+all: gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin \
+           gmt64.crt gram512-64.crt gram1-64.crt gram4-64.crt
+	cat gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin >rom64.bin
+
+
+
+#gmt64: gmt.rel $(OBJECTS)
+#	ld65 $< $(OBJECTS) -t $(TARGET) --lib $(TARGET).lib -o $@
+
+gmt64.rel: gmt.c
+	$(SDCC) $(CFLAGS) -DCART -c -o $@ $<
+
+gram512-64.rel: gmt.c
+	$(SDCC) $(CFLAGS) -DCART -DDIAG=5 -c -o $@ $<
+
+gram1-64.rel: gmt.c
+	$(SDCC) $(CFLAGS) -DCART -DDIAG=1 -c -o $@ $<
+
+gram4-64.rel: gmt.c
+	$(SDCC) $(CFLAGS) -DCART -DDIAG=4 -c -o $@ $<
+
+%.ihx: %.rel $(OBJECTS)
+	$(SDCC) $(SDCCLINKFLAGS) $(CRT) $(LIBS) $(OBJECTS) $< -o $@
+
+
+
+#%.crt: %.o cart64_16k.o $(OBJECTS)
+#	ld65 cart64_16k.o $< $(OBJECTS) -C $(SYS_INCLUDE)/cart64_16k.cfg --lib $(TARGET).lib -o $@
+
+#%.bin: %.crt
+#	cartconv -i $< -o $@
+
+
+
+%.bin: %.ihx
+	$(MAKEBIN) -p $< $@
+
+%.rel: %.c
+	$(SDCC) -c $(CFLAGS) $<
+
+%.rel: %.s
+	$(SDAS) -jxlosp $<

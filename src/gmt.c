@@ -36,7 +36,7 @@
 #define SCR_WIDTH       40
 #endif
 
-#define VER "0.47"
+#define VER "0.48"
 #define LOG_LINES 10
 #define LOG_LEN   (80)
 #define STATUS_X  (SCR_WIDTH/2+2)
@@ -132,8 +132,11 @@ unsigned int NErr; // total number of errors
 /*                                Test Data                                  */
 /*****************************************************************************/
 
-static const tword_t mats4_pat[]  = { 0x0000, 0x5555, 0x3333 };
-static const tword_t mats8_pat[]  = { 0x0000, 0x5555, 0x0f0f, 0x3333 };
+static const tword_t mats4_pat[]  = { (tword_t)0x0000, (tword_t)0x5555,
+                                      (tword_t)0x3333 };
+static const tword_t mats8_pat[]  = { (tword_t)0x0000, (tword_t)0x5555,
+                                      (tword_t)0x0f0f, (tword_t)0x3333 };
+
 #if TWORD_SIZE==2
 static const tword_t mats16_pat[] = { 0x0000, 0x5555, 0x00ff, 0x0f0f, 0x3333 };
 static const tword_t sso_pat[]    = { 0x01fe, 0x02fd, 0x04fb, 0x08f7,
@@ -157,7 +160,7 @@ static const struct test_t test[] = {
 /*****************************************************************************/
 
 static unsigned int mstart, mend;  // detected expansion memory
-static char *rom_ver;               // detected rom version
+static const char *rom_ver;               // detected rom version
 
 static char log_data[LOG_LINES][LOG_LEN+1];
 static unsigned char log_put;
@@ -726,7 +729,7 @@ void solidframetitle(unsigned char x, unsigned char y, unsigned char w, char * t
   unsigned char i;
   gotoxy(x,y);
   printf(INV_ON MTEXT_ON);
-  for(i=0;i<w;i++) putchar(' ');
+  for(i=0;i<w;i++) cputc(' ');
   printf(INV_OFF MTEXT_OFF );
   gotoxy (x+ (w - strlen (title) -2 ) / 2, y);
   printf(INV_ON " %s " INV_OFF ,title);

@@ -1,5 +1,5 @@
-all: a2 c64 c128 
-#sdcc-c64
+all: a2 c64 c128
+# sdcc-c64
 
 a2:
 	mkdir -p build-a2
@@ -34,3 +34,5 @@ cart: all
 	cat build-c64/gmt64.bin build-c64/gmt64.bin build-c64/gram1-64.bin build-c64/gram4-64.bin \
 		build-c128/gmt128.bin build-c128/gmt128.bin build-c128/gram1-128.bin build-c128/gram4-128.bin \
 		> cart.bin
+
+.PRECIOUS: *.rel *.ihx

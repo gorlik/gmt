@@ -36,10 +36,10 @@ void __fastcall__ textframexy (unsigned char x, unsigned char y,
   } else {
     printf(INV_ON "\xb5");
     for(i=0;i<width-2;i++)
-      putchar(' '); // poke value 64
-    printf("\xb6" INV_OFF);			       
+      cputc(' '); // poke value 64
+    printf("\xb6" INV_OFF);
   }
-  
+
   for(i=1;i<height-1;i++) {
     gotoxy(x,y+i);
     cputc(0x7d); // poke value 93

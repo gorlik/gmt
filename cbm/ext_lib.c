@@ -36,7 +36,8 @@ void __fastcall__ textframexy (unsigned char x, unsigned char y,
   } else {
     printf(INV_ON "\xb5");
     for(i=0;i<width-2;i++)
-      cputc(' '); // poke value 64
+      putchar(' '); // poke value 32
+    // the above must be a putchar otherwise cc65 will print the wrong character
     printf("\xb6" INV_OFF);
   }
 

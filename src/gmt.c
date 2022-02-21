@@ -475,19 +475,20 @@ static unsigned int Mem_Detect(unsigned char mstart)
   for(b=MAX_BANK; b>mstart; b--) {
     v=b^0xff;
     LPOKE(b,0,v);
-    //    printf("poke %02x %04x %02x\n",b,0,v);
+    //    printf("lpoke %02x:%04x %02x\n",b,0,v);
   }
-    v=b^0xff;
-    if(v==0xff) v=0x5a; //fix first bank georam detection
-    LPOKE(b,0,v);
-    //    printf("poke %02x %04x %02x\n",b,0,v);
+
+  v=b^0xff;
+  if(v==0xff) v=0x5a; //fix first bank georam detection
+  LPOKE(b,0,v);
+  //  printf("lpoke %02x:%04x %02x\n",b,0,v);
   
   
   for(b=mstart;b<=MAX_BANK;b++) {
     v=b^0xff;
     if(v==0xff) v=0x5a;
     r=LPEEK(b,0);
-    //    printf("peek %02x %04x = %02x E:%02x\n",b,0,r,v);
+    //    printf("lpeek %02x %04x = %02x Exp:%02x\n",b,0,r,v);
     if(r!=v) { break; }
   }
 #ifdef TEST
@@ -729,7 +730,7 @@ void solidframetitle(unsigned char x, unsigned char y, unsigned char w, char * t
   unsigned char i;
   gotoxy(x,y);
   printf(INV_ON MTEXT_ON);
-  for(i=0;i<w;i++) cputc(' ');
+  for(i=0;i<w;i++) putchar(' ');
   printf(INV_OFF MTEXT_OFF );
   gotoxy (x+ (w - strlen (title) -2 ) / 2, y);
   printf(INV_ON " %s " INV_OFF ,title);

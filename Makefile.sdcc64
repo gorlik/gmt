@@ -1,40 +1,42 @@
-SDCCDIR = /mnt/share/local/sdcc420/bin
-SDCC = $(SDCCDIR)/sdcc
-SDAS = $(SDCCDIR)/sdas6500
-MAKEBIN = $(SDCCDIR)/makebin
+SDCCROOT = /mnt/share/local/sdcc420/bin
+SDCC = $(SDCCROOT)/sdcc
+SDAS = $(SDCCROOT)/sdas6500
+MAKEBIN = $(SDCCROOT)/makebin
 
-SDKDIR = ../../cbm-games/cbm-sdk
-
-SDCCTARGET = -mmos6502
+SDKROOT = ../../sdcc-sdk/sdcc-6502-sdk
+TARGET = -mmos6502 -D__C64__
 SDCCOPT = --max-allocs-per-node 25000 --opt-code-speed
 SDCCDEBUG = --fverbose-asm --i-code-in-asm
-SDKINC = -I $(SDKDIR)/include
-
-#SDCCFLAGS = $(SDCCOPT) $(SDKINC)
-SDCCLINKFLAGS = -L $(SDKDIR)/lib --out-fmt-ihx -mmos6502 --no-std-crt0 --code-loc 0x8000 --xram-loc 0x1000
-CRT = $(SDKDIR)/lib/c64_cart_crt0.rel
-LIBS = -l c64.lib
+SDKINC = -I $(SDKROOT)/include
 
 VPATH = ../cbm ../src
 INCLUDE = ../src
 SYS_INCLUDE = ../cbm
 
-CFLAGS=-I. -I$(INCLUDE) -I$(SYS_INCLUDE) $(SDCCTARGET) $(SDCCOPT) $(SDKINC)
+CART = --code-loc 0x8000 --xram-loc 0x1000 $(SDKROOT)/lib/c64_cart_crt0.rel
+PRG = --code-loc 0x7ff --xram-loc 0x8000 $(SDKROOT)/lib/c64_prg_crt0.rel
+LIBS = -l c64.lib
+
+CFLAGS = -I. -I$(INCLUDE) -I$(SYS_INCLUDE) $(TARGET) $(SDCCOPT) $(SDKINC)
+LDFLAGS = -L $(SDKROOT)/lib --out-fmt-ihx -mmos6502 --no-std-crt0
+
+
+
 
 OBJECTS=ext_lib.rel lpeekpoke.rel mtest_asm_as65.rel
 
 
 # gmt64.prg
-all: gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin 
+all: gmt.prg gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin
 
 #           gmt64.crt gram512-64.crt gram1-64.crt gram4-64.crt
 #	cat gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin >rom64.bin
 
-.PRECIOUS: %.rel %.ihx
+gmt.ihx: gmt.rel $(OBJECTS)
+	$(SDCC) $(LDFLAGS) $(PRG) $(LIBS) $(OBJECTS) $< -o $@
 
-
-#gmt64: gmt.rel $(OBJECTS)
-#	ld65 $< $(OBJECTS) -t $(TARGET) --lib $(TARGET).lib -o $@
+gmt.rel: gmt.c
+	$(SDCC) $(CFLAGS) -c -o $@ $<
 
 gmt64.rel: gmt.c
 	$(SDCC) $(CFLAGS) -DCART -c -o $@ $<
@@ -48,13 +50,18 @@ gram1-64.rel: gmt.c
 gram4-64.rel: gmt.c
 	$(SDCC) $(CFLAGS) -DCART -DDIAG=4 -c -o $@ $<
 
-%.bin: %.ihx
-	srec_cat -Disable_Sequence_Warnings gmt64.ihx -i -fill 0xff 0x0000 0xc000 -crop 0x8000 0xc000 -offset -0x8000 -o gmt64.bin -bin
+%.prg: %.ihx
+	$(MAKEBIN) -o 0x7ff -s 0xd000 -p $< $@
 
-#	$(MAKEBIN) -o 32768 -s 49152 -p $< $@
+.PRECIOUS: %.rel %.ihx
+
+%.bin: %.ihx
+	$(MAKEBIN) -o 0x8000 -s 0xc000 $< $@
+
+#	srec_cat -Disable_Sequence_Warnings gmt64.ihx -i -fill 0xff 0x0000 0xc000 -crop 0x8000 0xc000 -offset -0x8000 -o gmt64.bin -bin
 
 %.ihx: %.rel $(OBJECTS)
-	$(SDCC) $(SDCCLINKFLAGS) $(CRT) $(LIBS) $(OBJECTS) $< -o $@
+	$(SDCC) $(LDFLAGS) $(CART) $(LIBS) $(OBJECTS) $< -o $@
 
 %.rel: %.c
 	$(SDCC) $(CFLAGS) -c -o $@ $<

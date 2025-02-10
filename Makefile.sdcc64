@@ -1,4 +1,4 @@
-SDCCROOT = /mnt/share/local/sdcc420/bin
+SDCCROOT = /mnt/share/local/sdcc450/bin
 SDCC = $(SDCCROOT)/sdcc
 SDAS = $(SDCCROOT)/sdas6500
 MAKEBIN = $(SDCCROOT)/makebin
@@ -14,17 +14,13 @@ INCLUDE = ../src
 SYS_INCLUDE = ../cbm
 
 CART = --code-loc 0x8000 --xram-loc 0x1000 $(SDKROOT)/lib/c64_cart_crt0.rel
-PRG = --code-loc 0x7ff --xram-loc 0x8000 $(SDKROOT)/lib/c64_prg_crt0.rel
+PRG = --code-loc 0x7ff --xram-loc 0x0 $(SDKROOT)/lib/c64_prg_crt0.rel
 LIBS = -l c64.lib
 
 CFLAGS = -I. -I$(INCLUDE) -I$(SYS_INCLUDE) $(TARGET) $(SDCCOPT) $(SDKINC)
-LDFLAGS = -L $(SDKROOT)/lib --out-fmt-ihx -mmos6502 --no-std-crt0
-
-
-
+LDFLAGS = -L $(SDKROOT)/lib -mmos6502 --no-std-crt0
 
 OBJECTS=ext_lib.rel lpeekpoke.rel mtest_asm_as65.rel
-
 
 # gmt64.prg
 all: gmt.prg gmt64.bin gram512-64.bin gram1-64.bin gram4-64.bin
@@ -57,8 +53,6 @@ gram4-64.rel: gmt.c
 
 %.bin: %.ihx
 	$(MAKEBIN) -o 0x8000 -s 0xc000 $< $@
-
-#	srec_cat -Disable_Sequence_Warnings gmt64.ihx -i -fill 0xff 0x0000 0xc000 -crop 0x8000 0xc000 -offset -0x8000 -o gmt64.bin -bin
 
 %.ihx: %.rel $(OBJECTS)
 	$(SDCC) $(LDFLAGS) $(CART) $(LIBS) $(OBJECTS) $< -o $@

@@ -19,7 +19,7 @@
 ;******************************************************************************
 .module gmt
 
-.area XDATA
+.area DATA
 bankbank:
 .db 0x00, 0x00
 
@@ -33,9 +33,7 @@ bankbank:
 .globl _Bank_Read
 .globl _Bank_Set
 
-
-.area CSEG (CODE)
-
+.area CODE
 
 ; ****************** Bank Set *********************
 _Bank_Set:
@@ -54,11 +52,11 @@ _Bank_Write:
 bw_loop:
 	stx 0xDFFE
 
-idx=0			
+idx=0
 .rept 256
 	sty 0xDE00+idx
 	idx = idx + 1
-.endm	
+.endm
 
 	inx
 	txa
@@ -78,8 +76,8 @@ bw_done:
 	jmp breakerror
 label:
 .endm
-	
-.macro check idx 
+
+.macro check idx
 	check1 idx*8+0 l0'idx
 	check1 idx*8+1 l1'idx
 	check1 idx*8+2 l2'idx
@@ -89,7 +87,7 @@ label:
 	check1 idx*8+6 l6'idx
 	check1 idx*8+7 l7'idx
 .endm
-	
+
 ; ****************** Bank Read *********************
 _Bank_Read:
 	lda bankbank
@@ -171,7 +169,7 @@ _AAD_Write:
 aw_loop:
 	stx 0xDFFE
 
-idx=0		
+idx=0
 .rept 256
 	sty 0xDE00+idx
 	iny

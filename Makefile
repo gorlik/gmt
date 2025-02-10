@@ -28,7 +28,7 @@ bin: all
 test: all
 	x64 +sound -cart16 build-c64/gmt64.bin -georam -georamsize 512
 	x64 +sound -cart16 build-sdcc64/gmt64.bin -georam -georamsize 512
-	x128 +sound -extfrom build-c128/gmt128.bin -extfunc 1 -georam -georamsize 512
+	x128 +sound -cartfrom build-c128/gmt128.bin -georam -georamsize 512
 	mame apple2gs -window -sound none -ui_active -skip_gameinfo -ramsize 2M -flop3 build-a2/gmt.2mg
 
 cart: all

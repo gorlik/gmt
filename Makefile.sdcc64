@@ -1,4 +1,4 @@
-SDCCROOT = /mnt/share/local/sdcc450/bin
+SDCCROOT = /mnt/share/local/sdcc-460/bin
 SDCC = $(SDCCROOT)/sdcc
 SDAS = $(SDCCROOT)/sdas6500
 MAKEBIN = $(SDCCROOT)/makebin
@@ -13,8 +13,8 @@ VPATH = ../cbm ../src
 INCLUDE = ../src
 SYS_INCLUDE = ../cbm
 
-CART = --code-loc 0x8000 --xram-loc 0x1000 $(SDKROOT)/lib/c64_cart_crt0.rel
-PRG = --code-loc 0x7ff --xram-loc 0x0 $(SDKROOT)/lib/c64_prg_crt0.rel
+CART = --code-loc 0x8000 --xram-loc 0x1000 --data-loc 0x02 -Wl-bOSEG=0xa3 $(SDKROOT)/lib/c64_cart_crt0.rel
+PRG  = --code-loc 0x07ff --xram-loc 0x0000 --data-loc 0x02 -Wl-bOSEG=0xa3 $(SDKROOT)/lib/c64_prg_crt0.rel
 LIBS = -l c64.lib
 
 CFLAGS = -I. -I$(INCLUDE) -I$(SYS_INCLUDE) $(TARGET) $(SDCCOPT) $(SDKINC)
